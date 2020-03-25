@@ -4,8 +4,9 @@ namespace jobsrey\widgets;
 
 use yii\helpers\Html;
 use yii\helpers\Json;
+use yii\widgets\InputWidget;
 
-class LeafletInput extends \yii\base\Widget
+class LeafletInput extends InputWidget
 {
 
     public $clientOptions = [];
