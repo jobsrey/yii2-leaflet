@@ -23,7 +23,7 @@ class LeafletInput extends InputWidget
         echo '<div class="row">
                     <div class="col-md-12">
                         <div id="mapid" style="height: 300px;"></div><br/><br/>
-                        '.$input.'
+                        ' . $input . '
                     </div>
                     
                     
@@ -38,6 +38,7 @@ class LeafletInput extends InputWidget
         $view = $this->getView();
 
         LeafletAsset::register($view);
+        LeafletAssetFullscreen::register($view);
 
         $id = $this->options['id'];
 
@@ -46,7 +47,15 @@ class LeafletInput extends InputWidget
         $options = Json::encode($this->clientOptions);
 
         // $js[] = "tinymce.remove('#$id');tinymce.init($options);";
-        $js[] = "var mymap = L.map('mapid').setView([1.0655987,97.5592101], 8);";
+        $js[] = "
+            var mymap = L.map('mapid',{
+                fullscreenControl: true,
+                fullscreenControlOptions: {
+                    position: 'topleft'
+                },
+                drawControl: true
+            }).setView([1.0655987,97.5592101], 8);
+        ";
 
         $js[] = "
 
@@ -61,7 +70,17 @@ class LeafletInput extends InputWidget
 
         ";
 
+        $js[] = "
+            var drawnItems = new L.FeatureGroup();
+            mymap.addLayer(drawnItems);
+            var drawControl = new L.Control.Draw({
+                edit: {
+                    featureGroup: drawnItems
+                }
+            });
+            mymap.addControl(drawControl);
+        ";
+
         $view->registerJs(implode("\n", $js));
     }
-
 }
