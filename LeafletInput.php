@@ -15,19 +15,18 @@ class LeafletInput extends InputWidget
     {
         $input = '';
         if ($this->hasModel()) {
-            $input =  Html::activeTextInput($this->model, $this->attribute, $this->options);
+            $input =  Html::activeHiddenInput($this->model, $this->attribute, $this->options);
         } else {
-            $input = Html::textInput($this->name, $this->value, $this->options);
+            $input = Html::hiddenInput($this->name, $this->value, $this->options);
         }
 
         echo '<div class="row">
                     <div class="col-md-12">
-                        <div id="mapid" style="height: 300px;"></div><br/><br/>
+                        <div id="mapid" style="height: 300px;"></div>
                         ' . $input . '
                     </div>
                     
-                    
-                </div><br/><br/>';
+                </div>';
 
         $this->registerClientScript();
     }
@@ -39,10 +38,14 @@ class LeafletInput extends InputWidget
 
         LeafletAsset::register($view);
         LeafletAssetFullscreen::register($view);
+        LeafletAssetDraw::register($view);
+        LeafletAssetInput::register($view);
 
         $id = $this->options['id'];
 
         $this->clientOptions['selector'] = "#$id";
+
+
 
         $options = Json::encode($this->clientOptions);
 
@@ -53,7 +56,7 @@ class LeafletInput extends InputWidget
                 fullscreenControlOptions: {
                     position: 'topleft'
                 },
-                drawControl: true
+                // drawControl: true
             }).setView([1.0655987,97.5592101], 8);
         ";
 
@@ -74,11 +77,53 @@ class LeafletInput extends InputWidget
             var drawnItems = new L.FeatureGroup();
             mymap.addLayer(drawnItems);
             var drawControl = new L.Control.Draw({
+                draw : {
+                    polygon: false,
+                    marker: true,
+                    polyline: false, 
+                    rectangle: false, 
+                    circle: false,
+                    circlemarker: false
+                },
                 edit: {
-                    featureGroup: drawnItems
+                    featureGroup: drawnItems,
+                    remove: false
                 }
             });
             mymap.addControl(drawControl);
+        ";
+
+        $js[] = "
+            var titik_awal = null;
+            mymap.on('draw:created', function (e) {
+                var type = e.layerType;
+                var layer = e.layer;
+                if (type === 'marker') {
+                    if(titik_awal !== null) {
+                        drawnItems.removeLayer(titik_awal);
+                        titik_awal = layer;
+    
+                    } else {
+                        titik_awal = layer;
+                    }
+                }
+
+
+                var wkt = toWKTSingle(layer);
+
+                $('#$id').val(wkt);
+
+                drawnItems.addLayer(layer);
+
+            });
+
+            mymap.on('draw:edited', function (e) {
+                var layers = e.layers;
+                layers.eachLayer(function (layer) {
+                    var wkt = toWKTSingle(layer);
+                    $('#$id').val(wkt);
+                });
+            });
         ";
 
         $view->registerJs(implode("\n", $js));
