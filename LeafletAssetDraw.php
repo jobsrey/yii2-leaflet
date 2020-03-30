@@ -52,11 +52,11 @@ class LeafletAssetDraw extends AssetBundle
 
 
     public $js = [
-        'LeafletAssetDraw.js'
+        // 'LeafletAssetDraw.js'
     ];
 
     public $css = [
-        'leaflet.draw.css',
+        // 'leaflet.draw.css',
     ];
     public $depends = [
         'yii\web\YiiAsset',

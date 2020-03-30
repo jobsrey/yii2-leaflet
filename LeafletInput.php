@@ -20,6 +20,9 @@ class LeafletInput extends InputWidget
             $input = Html::hiddenInput($this->name, $this->value, $this->options);
         }
 
+
+
+
         echo '<div class="row">
                     <div class="col-md-12">
                         <div id="mapid" style="height: 300px;"></div>
@@ -72,7 +75,8 @@ class LeafletInput extends InputWidget
             }).addTo(mymap);
 
         ";
-
+        
+        //controll
         $js[] = "
             var drawnItems = new L.FeatureGroup();
             mymap.addLayer(drawnItems);
@@ -93,38 +97,78 @@ class LeafletInput extends InputWidget
             mymap.addControl(drawControl);
         ";
 
-        $js[] = "
-            var titik_awal = null;
-            mymap.on('draw:created', function (e) {
-                var type = e.layerType;
-                var layer = e.layer;
-                if (type === 'marker') {
+        if($this->model->isNewRecord){
+           
+            $js[] = "
+                var titik_awal = null;
+                mymap.on('draw:created', function (e) {
+                    var type = e.layerType;
+                    var layer = e.layer;
+
                     if(titik_awal !== null) {
                         drawnItems.removeLayer(titik_awal);
                         titik_awal = layer;
-    
+
                     } else {
                         titik_awal = layer;
                     }
-                }
 
-
-                var wkt = toWKTSingle(layer);
-
-                $('#$id').val(wkt);
-
-                drawnItems.addLayer(layer);
-
-            });
-
-            mymap.on('draw:edited', function (e) {
-                var layers = e.layers;
-                layers.eachLayer(function (layer) {
                     var wkt = toWKTSingle(layer);
                     $('#$id').val(wkt);
+                    drawnItems.addLayer(layer);
+
                 });
-            });
-        ";
+
+                mymap.on('draw:edited', function (e) {
+                    var layers = e.layers;
+                    layers.eachLayer(function (layer) {
+                        var wkt = toWKTSingle(layer);
+                        $('#$id').val(wkt);
+                    });
+                });
+            ";
+        } else {
+            $dataWkt = $this->model->{$this->attribute};
+
+            $js[] = "
+                var wkt_geom = '$dataWkt';
+                var wicket = new Wkt.Wkt();
+                wicket.read(wkt_geom);
+                var titik_awal = wicket.toObject();
+                drawnItems.addLayer(titik_awal);
+
+                mymap.fitBounds(drawnItems.getBounds());
+
+                mymap.setZoom(14);
+
+                mymap.on('draw:created', function (e) {
+                    var type = e.layerType;
+                    var layer = e.layer;
+
+                    if(titik_awal !== null) {
+                        drawnItems.removeLayer(titik_awal);
+                        titik_awal = layer;
+                    } else {
+                        titik_awal = layer;
+                    }
+
+                    var wkt = toWKTSingle(layer);
+                    $('#$id').val(wkt);
+                    drawnItems.addLayer(layer);
+
+                });
+
+                mymap.on('draw:edited', function (e) {
+                    var layers = e.layers;
+                    layers.eachLayer(function (layer) {
+                        var wkt = toWKTSingle(layer);
+                        $('#$id').val(wkt);
+                    });
+                });
+
+            ";
+
+        }
 
         $view->registerJs(implode("\n", $js));
     }
